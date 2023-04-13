@@ -1,117 +1,141 @@
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.utils.translation import gettext_lazy as _
 from django.db import models
-from django.utils import timezone
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
-# Create your models here.
 
-''' Baseuser manager which creates new user and create_superuser '''
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+class PersonalUserManager(BaseUserManager):
+    def create_user(self, email, first_name, last_name, phone_number, birthday, password=None, **extra_fields):
         if not email:
-            raise ValueError("User must have an Email address")
-        user = self.model( email=self.normalize_email(email))
+            raise ValueError('The Email field must be set')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+            birthday=birthday,
+            **extra_fields
+        )
+
         user.set_password(password)
         user.save(using=self._db)
         return user
-    
-    def create_superuser(self, email, password=None):
-        user = self.create_user(email, password=password)
-        user.is_admin = True
-        user.is_staff = True
-        user.save(using=self._db)
-        return user
-    
-    def create_personaluser(self,email,password):
-        if password is None:
-             raise TypeError('Paitent must have a password')
-        user = self.create_user(email,password)
-        user.is_personal = True
-        user.save()
-        return user
+
+    def create_superuser(self, email, first_name, last_name, phone_number, birthday, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, first_name, last_name, phone_number, birthday, password, **extra_fields)
 
 
-    def create_businessuser(self,email,password):
-        if password is None:
-            raise TypeError('Doctors must have a password')
-        user = self.create_user(email,password)
-        user.is_business = True
-        user.save()
-        return user
-
-""" Custom User which supports both email and username """
-class MyUser(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(max_length=255, unique=True, verbose_name="Email Address")
-    first_name = models.CharField(_('first name'), max_length=30, blank=True)
-    last_name = models.CharField(_('last name'), max_length=30, blank=True)
-    is_admin = models.BooleanField(default=False)
+class PersonalUser(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(max_length=255,unique=True)
+    first_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255)
+    phone_number = models.CharField(max_length=20)
+    birthday = models.DateField()
+    is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    is_business = models.BooleanField(default=False)
-    is_personal = models.BooleanField(default=False)
-    is_active = models.BooleanField(_('active'), default=True, help_text=_(
-        'Designates whether this user should be treated as active. Unselect this instead of deleting account')
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'phone_number', 'birthday']
+
+    objects = PersonalUserManager()
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        related_name='personal_usersrrr',
+        related_query_name='personal_userrrr'
     )
-    created = models.DateTimeField('created', auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-    is_trusty = models.BooleanField(_('trusty'), default=False, help_text=_(
-        'Designates whether this user has confirmed his account.')
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name='personal_usersrr',
+        related_query_name='personal_userrrr'
     )
 
-    objects = UserManager()
-
-    USERNAME_FIELD = 'email' # Set email as a default login field
-    REQUIRED_FIELDS = []  # <- email and password are required by default
-
-
-    def has_perm(self, perm, obj=None):
-        return True
-
-    def has_module_perms(self, app_label):
-        """Does the user has permission to view a specific app"""
-
-
-    @property
-    def is_staff(self):
-        """Is the user a staff member"""
-        return self.is_staff
-
-    @property
-    def is_admin(self):
-        """Is the user a admin member"""
-        return self.is_admin
-
-    @property
-    def is_active(self):
-        """Is the user active"""
-        return self.is_active
-    
     class Meta:
-        verbose_name = _('MyUser')
-        verbose_name_plural = _('MyUsers')
-        db_table = 'user'
-
+        verbose_name = 'Personal User'
+        verbose_name_plural = 'Personal Users'
 
     def __str__(self):
         return self.email
+
+
+class BusinessUserManager(BaseUserManager):
+    def create_user(self, email, company_name, voen, phone_number, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+
+        user = self.model(
+            email=self.normalize_email(email),
+            company_name=company_name,
+            voen=voen,
+            phone_number=phone_number,
+            **extra_fields
+        )
+
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, company_name, voen, phone_number, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, company_name, voen, phone_number, password, **extra_fields)
+    
     
 
-    class BusinessProfile(models.Model):
-        user = models.OneToOneField("MyUser", on_delete=models.CASCADE)
-        company_name=models.CharField(max_length=255)
-        phone_number =models.CharField(max_length=25)
+class BusinessUser(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(max_length=255,unique=True)
+    company_name = models.CharField(max_length=255)
+    voen = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
 
-        def __str__ (self):
-            return self.company_name
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['company_name', 'voen', 'phone_number']
+
+    objects = BusinessUserManager()
+
+    groups = models.ManyToManyField(
+        'auth.Group',
+        verbose_name='groups',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        related_name='business_users',
+        related_query_name='business_user'
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        verbose_name='user permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_name='business_users',
+        related_query_name='business_user'
+    )
+
+    class Meta:
+        verbose_name = 'Business User'
+        verbose_name_plural = 'Business Users'
+
+    def __str__(self):
+        return self.email
 
 
-    class PersonalProfile(models.Model):
-        user = models.OneToOneField("MyUser", on_delete=models.CASCADE)
-        date_of_birth=models.DateField(null=True, blank=True)
-        phone_number =models.CharField(max_length=25)
+class Profile(models.Model):
+    user = models.OneToOneField(PersonalUser, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
+    business_user = models.OneToOneField(BusinessUser, on_delete=models.CASCADE, related_name='profile', null=True, blank=True)
+    first_name = models.CharField(max_length=50, blank=True)
+    last_name = models.CharField(max_length=50, blank=True)
+    company_name = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    voen = models.CharField(max_length=20, blank=True)
+    # address = models.CharField(max_length=100, blank=True)
 
-        def __str__ (self):
-            return self.phone_number
-
-        
-
-        
+    def __str__(self):
+        return f"Profile for {self.user} / {self.business}"

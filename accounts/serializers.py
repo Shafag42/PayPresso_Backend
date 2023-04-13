@@ -1,85 +1,120 @@
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
+# from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from accounts.models import MyUser,PersonalProfile,BusinessProfile
+from rest_framework_simplejwt.tokens import RefreshToken
+from accounts.models import PersonalUser,BusinessUser,Profile
 
 
-class MyUserSerializer(serializers.ModelSerializer):
+class PersonalUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
     class Meta:
-        model = MyUser
-        fields = ( "email", "password", "is_personal", "is_business")
-        extra_kwargs = {"password": {"write_only": True}}
-
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-        user = MyUser.objects.create_user(password=password, **validated_data)
-        return user
-    
-class BusinessProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BusinessProfile
-        fields = '__all__'
+        model = PersonalUser
+        fields = ['id', 'email','first_name', 'last_name', 'password', 'confirm_password']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def validate(self, attrs):
+        if attrs['password'] != attrs.pop('confirm_password'):
+            raise serializers.ValidationError("Passwords do not match")
+        return attrs
 
-class PersonalProfileSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        return PersonalUser.objects.create_user(**validated_data)
+
+
+class BusinessUserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
     class Meta:
-        model = PersonalProfile
-        fields = '__all__'
+        model = BusinessUser
+        fields = ['id', 'email', 'company_name', 'voen', 'phone_number', 'password', 'confirm_password']
+        extra_kwargs = {'password': {'write_only': True}}
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-        @classmethod
-        def get_token(cls, user):
-            token = super().get_token(user)
-            
-            if user.is_superuser:
-                token['is_superuser'] = True
-                
-                return token
+    def validate(self, attrs):
+        if attrs['password'] != attrs.pop('confirm_password'):
+            raise serializers.ValidationError("Passwords do not match")
+        return attrs
 
-# class BusinessRegistrationSerializer(serializers.ModelSerializer):
-    # profile = BusinessProfileSerializer(required=False)
+    def create(self, validated_data):
+        validated_data.pop('confirm_password')
+        return BusinessUser.objects.create_user(**validated_data)
+        
 
-    # class Meta:
-    #     model = MyUser
-    #     fields = ('email', 'password', 'profile')
-    #     extra_kwargs = {'password': {'write_only': True}}
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(max_length=255)
+    password = serializers.CharField(max_length=128, write_only=True)
 
-    # def create(self, validated_data):
-    #     profile_data = validated_data.pop('profile')
-    #     user = MyUser.objects.create_businessuser(**validated_data)
-    #     BusinessProfile.objects.create(
-    #         user=user,
-    #         first_name=profile_data['first_name'],
-    #         last_name=profile_data['last_name'],
-    #         phone_number=profile_data['phone_number'],
-    #         #age=profile_data['age'],
-            
-    #     )
-    #     return user
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
 
-# class PersonalRegistrationSerializer(serializers.ModelSerializer):
+        if email and password:
+            user = authenticate(request=self.context.get('request'),
+                                email=email, password=password)
+            if not user:
+                raise serializers.ValidationError('Invalid email or password')
+        else:
+            raise serializers.ValidationError('Email and password are required')
 
-#     profile = PersonalProfile(required=False)
+        attrs['user'] = user
+        return attrs
+    
 
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            RefreshToken(self.token).blacklist()
+        except Exception as e:
+            raise serializers.ValidationError('Invalid token')
+        
+
+class TokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        if isinstance(user, PersonalUser):
+            token['user_type'] = 'personal'
+        elif isinstance(user, BusinessUser):
+            token['user_type'] = 'business'
+
+        return token
+
+
+class PersonalUserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['address', 'phone_number', 'birthday']
+
+
+class BusinessUserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['address', 'phone_number', 'company_name', 'voen']
+
+
+# class BusinessProfileSerializer(serializers.ModelSerializer):
 #     class Meta:
-#         model = MyUser
-#         fields = ('email', 'password', 'profile')
+#         model = BusinessProfile
+#         fields = '__all__'
 #         extra_kwargs = {'password': {'write_only': True}}
 
-#     def create(self, validated_data):
-#         profile_data = validated_data.pop('profile')
-#         user = MyUser.objects.create_personaluser(**validated_data)
-#         PersonalProfile.objects.create(
-#             user=user,
-#             first_name=profile_data['first_name'],
-#             last_name=profile_data['last_name'],
-#             phone_number=profile_data['phone_number'],
-            
-#         )
-#         return user
-    
+
+# class PersonalProfileSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = PersonalProfile
+#         fields = '__all__'
+
 
     
 
