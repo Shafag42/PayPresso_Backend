@@ -1,21 +1,15 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
-from accounts.views import  (PersonalUserProfileRetrieveUpdateView,
-                             BusinessUserProfileRetrieveUpdateView,TokenObtainPairView,
-                             UserLoginView,LogoutView,PersonalUserRegisterView,BusinessUserRegisterView
-                             ,PersonalUserProfileView,BusinessUserProfileView,ForgotPasswordView,ResetPasswordView)
+from accounts.views import  (TokenObtainPairView,CustomUserRegisterView,UserProfileView,
+                             UserLoginView,LogoutView,ForgotPasswordView,ResetPasswordView)
 
 urlpatterns = [
-    path('personal_user/register/', PersonalUserRegisterView.as_view(), name='personal_user_register'),
-    path('business_user/register/', BusinessUserRegisterView.as_view(), name='business_user_register'),
-    path("token/create/", TokenObtainPairView.as_view(), name='token_create'),
+    path('custom_user/register/', CustomUserRegisterView.as_view(), name='user_register'),
+    path('profile/', UserProfileView.as_view(), name='profile'),
+    path("token/create/",  TokenObtainPairView.as_view(), name='token_create'),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("personal_profile/create", PersonalUserProfileView.as_view(), name="personal_profile_create"),
-    path("business_profile/create", BusinessUserProfileView.as_view(), name="business_profile_create"),
-    path("personal_profile/update", PersonalUserProfileRetrieveUpdateView.as_view(), name="personal_profile_update"),
-    path("business_profile/update", BusinessUserProfileRetrieveUpdateView.as_view(), name="business_profile_update"),
-    path('login/', UserLoginView.as_view(), name='login'),
+    path('login/',  UserLoginView.as_view(), name='login'),
     path("logout/", LogoutView.as_view(), name="logout"),
     path('forgot_password/', ForgotPasswordView.as_view(), name='forgot_password'),
-    path('reset_password/<str:token>/', ResetPasswordView.as_view(), name='reset_password'),
+    path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),
 ]

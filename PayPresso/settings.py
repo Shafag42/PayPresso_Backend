@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
+    'products',
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -136,8 +137,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-AUTH_USER_MODEL = 'accounts.PersonalUser'
-COMPANY_USER_MODEL = 'accounts.BusinessUser'
+AUTH_USER_MODEL = 'accounts.CustomUser'
+# COMPANY_USER_MODEL = 'accounts.BusinessUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -145,6 +146,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAdminUser',
         
     ],
+    'DATE_INPUT_FORMATS': [("%d.%m.%Y")],
+    'DATETIME_FORMAT': '%d.%m.%Y',
      'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',

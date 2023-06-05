@@ -1,72 +1,78 @@
 from django.contrib import admin
-from .models import PersonalUser, BusinessUser,PersonalProfile,BusinessProfile
+from accounts.models import CustomUser
 from django.contrib.auth.admin import UserAdmin
+from django.utils.translation import gettext_lazy as _
 
+class CustomUserAdmin(UserAdmin):
 
-class PersonalUserAdmin(UserAdmin):
-    list_display = ('email', 'first_name', 'last_name', 'phone_number','birthday','date_joined', 'is_staff', 'is_active')
-    list_filter = ('is_staff', 'is_active')
-    fieldsets = (
+    ordering = ('email',)
+    list_display = ('email', 'first_name', 'last_name', 'phone_number', 'birthday', 'company_name', 'voen', 'is_staff', 'is_personal', 'is_business','password')
+    fieldsets_personal = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'phone_number','birthday')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active')}),
-        # ('Important dates', {'fields': ( 'date_joined')}),
-        ('Groups & Permissions', {'fields': ('groups', 'user_permissions')}),
+        (_('Personal Info'), {'fields': ('first_name', 'last_name', 'phone_number', 'birthday')}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'is_personal')}),
+        (_('Important dates'), {'fields': ('date_joined',)}),
     )
-    add_fieldsets = (
+    fieldsets_business = (
+        (None, {'fields': ('email', 'password')}),
+        (_('Company Info'), {'fields': ('company_name', 'voen', 'phone_number')}),
+        (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'is_business')}),
+        (_('Important dates'), {'fields': ('date_joined',)}),
+    )
+    add_fieldsets_personal = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email','first_name', 'last_name', 'phone_number','birthday', 'password1', 'password2','date_joined',  'is_staff', 'is_active')}
-        ),
+            'fields': ('email', 'first_name', 'last_name', 'phone_number', 'birthday', 'password'),
+        }),
     )
-    search_fields = ('email', 'first_name', 'last_name', 'phone_number')
-    ordering = ('email',)
-
-class BusinessUserAdmin(UserAdmin):
-    list_display = ('email', 'company_name', 'voen', 'phone_number','date_joined', 'is_staff', 'is_active')
-    list_filter = ('is_staff', 'is_active')
-    fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Company Info', {'fields': ('company_name', 'voen', 'phone_number')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active')}),
-        # ('Important dates', {'fields': ('date_joined')}),
-        ('Groups & Permissions', {'fields': ('groups', 'user_permissions')}),
-    )
-    add_fieldsets = (
+    add_fieldsets_business = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'company_name', 'voen', 'phone_number', 'password1', 'password2','date_joined','is_staff', 'is_active')}
-        ),
+            'fields': ('email', 'company_name', 'voen', 'phone_number', 'password'),
+        }),
     )
-    search_fields = ('email', 'company_name', 'voen', 'phone_number')
-    ordering = ('email',)
-
-   
-class PersonalProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'first_name', 'last_name', 'phone_number', 'birthday')
-    search_fields = ('user__email', 'user__first_name', 'user__last_name')
-    fields = ('first_name', 'last_name', 'phone_number', 'birthday','date_joined')
     
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(user__isnull=False)
-    
-class BusinessProfileAdmin(admin.ModelAdmin):
-    list_display = ('business_user', 'company_name', 'phone_number', 'voen')
-    search_fields = ('business_user__email', 'company_name')
-    fields = ('company_name', 'phone_number', 'voen', 'business_user','date_joined')
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(business_user__isnull=False)
+    def get_fieldsets(self, request, obj=None):
+        if obj and obj.is_business:
+            return self.fieldsets_business
+        elif obj and obj.is_personal:
+            return self.fieldsets_personal
+        elif request.POST.get('is_business'):
+            return self.fieldsets_business
+        else:
+            return self.fieldsets_personal
+
+    def get_add_fieldsets(self, request):
+        if request.POST.get('is_business'):
+            return self.add_fieldsets_business
+        else:
+            return self.add_fieldsets_personal
+
+    list_display_personal = ('email', 'first_name', 'last_name', 'phone_number', 'birthday', 'is_staff', 'is_personal', 'is_business')
+    list_display_business = ('email', 'is_staff', 'is_personal', 'is_business')
+
+    def get_list_display(self, request):
+        if request.POST.get('is_business'):
+            return self.list_display_business
+        else:
+            return self.list_display_personal
+    
+    def get_list_display(self, request):
+        if request.POST.get('is_business'):
+            return self.list_display_business
+        else:
+            return self.list_display_personal
+
 
     def save_model(self, request, obj, form, change):
-        if not change:
-            obj.business_user = request.user
-        obj.save()
+        if request.POST.get('is_business'):
+            obj.is_personal = False
+            obj.is_business = True
+        else:
+            obj.is_personal = True
+            obj.is_business = False
+        super().save_model(request, obj, form, change)
 
+admin.site.register(CustomUser, CustomUserAdmin)
 
-admin.site.register(PersonalUser, PersonalUserAdmin)
-admin.site.register(BusinessUser, BusinessUserAdmin)
-admin.site.register(PersonalProfile, PersonalProfileAdmin)
-admin.site.register(BusinessProfile, BusinessProfileAdmin)
