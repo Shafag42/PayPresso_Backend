@@ -81,8 +81,6 @@ class CustomUserAdmin(UserAdmin):
             self.fieldsets = self.add_fieldsets_personal
         return super().add_view(request, extra_context=extra_context)
 
-   
-
 
     def save_model(self, request, obj, form, change):
         if request.POST.get('is_business'):
