@@ -20,8 +20,11 @@ class CategoryListAPIView(generics.ListCreateAPIView):
 class CategoryDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    # authentication_classes = []
+    # permission_classes = [AllowAny]
 
-class ProductListAPIView(generics.ListAPIView):
+
+class ProductListAPIView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     authentication_classes = []
@@ -43,8 +46,10 @@ class ProductDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     lookup_field = 'slug'  # Lookup alanını slug olarak ayarla
+    authentication_classes = []
+    permission_classes = [AllowAny]
 
-class ProductDetailListAPIView(generics.ListAPIView):
+class ProductDetailsListAPIView(generics.ListCreateAPIView):
     queryset = Product_detail.objects.all()
     serializer_class = ProductDetailSerializer
     authentication_classes = []
@@ -57,7 +62,7 @@ class ProductDetailListAPIView(generics.ListAPIView):
         return product.related_products.all()
 
 
-class ProductDetailRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+class ProductDetailsAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product_detail.objects.all()
     serializer_class = ProductDetailSerializer
     lookup_field = 'slug'
@@ -65,8 +70,8 @@ class ProductDetailRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAP
     permission_classes = [AllowAny]
 
     def get_object(self):
-        product_slug = self.kwargs['slug']
-        return get_object_or_404(Product, slug=product_slug)
+        slug = self.kwargs['slug']
+        return get_object_or_404(Product_detail, slug=slug)
 
 
 #category products
@@ -91,6 +96,9 @@ class FavoriteListAPIView(generics.ListAPIView):
 class FavoriteCreateAPIView(generics.CreateAPIView):
     queryset = Favorite.objects.all()
     serializer_class = FavoriteSerializer
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
 
     
 class FavoriteDeleteAPIView(generics.DestroyAPIView):

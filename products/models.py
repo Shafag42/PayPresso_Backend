@@ -62,8 +62,9 @@ class Product_detail(models.Model):
     slug = models.SlugField(unique=True, max_length=255, blank=True)
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.rating_count)
+        self.slug = slugify(self.slug)
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.long_desc
