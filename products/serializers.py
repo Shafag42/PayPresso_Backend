@@ -1,22 +1,11 @@
 from rest_framework import serializers
-from .models import Product,Product_detail, Category,Favorite
-# , Brand, Review
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Favorite
-        fields = '__all__'
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-        fields = '__all__'
-
+from .models import Product,Product_detail # , Brand, Review
+from category.serializers import CategorySerializer
+from wishlists.serializers import WishlistSerializer
 
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer()
-    favorites = FavoriteSerializer(many=True, read_only=True)
+    favorites = WishlistSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -27,8 +16,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product_detail
         fields = '__all__'
-
-
 
 
 

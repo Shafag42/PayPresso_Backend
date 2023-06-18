@@ -5,24 +5,10 @@ from rest_framework import generics,filters
 from rest_framework import filters
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
-
-from .models import Category,Product,Product_detail,Favorite
-from .serializers import CategorySerializer,ProductSerializer,ProductDetailSerializer,FavoriteSerializer
+from django.contrib.auth.decorators import login_required
+from .models import Product,Product_detail
+from .serializers import ProductSerializer,ProductDetailSerializer
 # Create your views here.
-
-
-class CategoryListAPIView(generics.ListCreateAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
-class CategoryDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    # authentication_classes = []
-    # permission_classes = [AllowAny]
-
 
 class ProductListAPIView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
@@ -83,24 +69,3 @@ class CategoryProductsAPIView(ListAPIView):
     def get_queryset(self):
         slug = self.kwargs['slug']
         return Product.objects.filter(category__slug=slug)
-
-
-class FavoriteListAPIView(generics.ListAPIView):
-    serializer_class = FavoriteSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        return Favorite.objects.filter(user=user)
-    
-
-class FavoriteCreateAPIView(generics.CreateAPIView):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteSerializer
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
-
-    
-class FavoriteDeleteAPIView(generics.DestroyAPIView):
-    queryset = Favorite.objects.all()
-    serializer_class = FavoriteSerializer

@@ -1,27 +1,12 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.text import slugify
+from category.models import Category
 
 User = get_user_model()
 
 
 # Create your models here.
-class Category(models.Model):
-    name = models.CharField(max_length=255)
-    image = models.ImageField(upload_to='category_images')
-    slug = models.SlugField(unique=True, max_length=255, blank=True)
-
-    def save(self, *args, **kwargs):
-        self.slug = slugify(self.name)
-        super().save(*args, **kwargs)
-    
-    class Meta:
-        verbose_name = "Category"
-        verbose_name_plural = "Categories"
-
-    def __str__(self):
-        return self.name
-
 
 class Product(models.Model):
     category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
@@ -69,17 +54,6 @@ class Product_detail(models.Model):
     def __str__(self):
         return self.long_desc
     
-
-class Favorite(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ['user', 'product']
-
-    def __str__(self):
-        return self.product.name
 
 
 # class Brand(models.Model):
